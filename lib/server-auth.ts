@@ -26,9 +26,8 @@ export async function getServerAuthContext() {
   }
 
   try {
-    const decodedToken = await getFirebaseAdminAuth().verifyIdToken(
-      sessionToken,
-    );
+    const adminAuth = await getFirebaseAdminAuth();
+    const decodedToken = await adminAuth.verifyIdToken(sessionToken);
 
     return {
       uid: decodedToken.uid,
@@ -59,4 +58,3 @@ export async function requireAdminAuth() {
 
   return authContext;
 }
-

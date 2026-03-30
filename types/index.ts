@@ -41,7 +41,6 @@ export interface EventFormValues {
   location: string;
   area: string;
   dateTime: string;
+  imageUrl?: string;
   status?: EventStatus;
-  image?: FileList;
 }
-

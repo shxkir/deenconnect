@@ -38,9 +38,7 @@ service cloud.firestore {
       data.area is string &&
       data.area.size() >= 2 &&
       data.imageUrl is string &&
-      data.imageUrl.size() > 0 &&
       data.imagePath is string &&
-      data.imagePath.size() > 0 &&
       data.createdBy is string &&
       isEventStatus(data.status);
     }
@@ -94,4 +92,3 @@ service cloud.firestore {
     }
   }
 }
-

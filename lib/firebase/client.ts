@@ -3,7 +3,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-const clientConfig = {
+const requiredClientConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -12,12 +12,23 @@ const clientConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const isFirebaseClientConfigured = Object.values(clientConfig).every(
-  Boolean,
-);
+const optionalClientConfig = {
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
+const clientConfig = {
+  ...requiredClientConfig,
+  ...(optionalClientConfig.measurementId
+    ? { measurementId: optionalClientConfig.measurementId }
+    : {}),
+};
+
+export const isFirebaseClientConfigured = Object.values(
+  requiredClientConfig,
+).every(Boolean);
 
 function assertClientConfig() {
-  const missingKeys = Object.entries(clientConfig)
+  const missingKeys = Object.entries(requiredClientConfig)
     .filter(([, value]) => !value)
     .map(([key]) => key);
 
@@ -49,4 +60,3 @@ export function getFirebaseClientDb() {
 export function getFirebaseClientStorage() {
   return getStorage(getFirebaseClientApp());
 }
-

@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   if (!isFirebaseAdminConfigured) {
     return NextResponse.json(
-      { error: "Firebase admin environment variables are missing." },
+      { error: "Firebase server auth environment variables are missing." },
       { status: 500 },
     );
   }
@@ -23,7 +23,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing ID token." }, { status: 400 });
   }
 
-  await getFirebaseAdminAuth().verifyIdToken(body.token);
+  const adminAuth = await getFirebaseAdminAuth();
+  await adminAuth.verifyIdToken(body.token);
 
   const cookieStore = await cookies();
   cookieStore.set(AUTH_COOKIE_NAME, body.token, {
@@ -49,4 +50,3 @@ export async function DELETE() {
 
   return NextResponse.json({ ok: true });
 }
-

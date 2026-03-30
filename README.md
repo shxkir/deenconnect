@@ -22,7 +22,6 @@ DeenConnect is a production-ready full-stack Muslim events platform built with N
 - Firebase Auth
 - Cloud Firestore
 - Firebase Storage
-- Firebase Admin SDK for server-side route protection
 
 ## Project Structure
 
@@ -50,8 +49,6 @@ In the Firebase console:
 3. Enable Email/Password under Authentication.
 4. Create a Firestore database in production mode.
 5. Enable Firebase Storage.
-6. Create a service account key for server-side token verification.
-
 ## 3. Configure environment variables
 
 Copy `.env.example` to `.env.local` and fill in every value:
@@ -68,18 +65,6 @@ Required client variables:
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
-
-Required admin variables:
-
-- `FIREBASE_ADMIN_PROJECT_ID`
-- `FIREBASE_ADMIN_CLIENT_EMAIL`
-- `FIREBASE_ADMIN_PRIVATE_KEY`
-
-For `FIREBASE_ADMIN_PRIVATE_KEY`, keep newline characters escaped in the env file, for example:
-
-```env
-FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-```
 
 ## 4. Deploy Firebase rules and indexes
 
@@ -156,7 +141,7 @@ RSVP documents use a deterministic document ID of `{eventId}_{userId}` so duplic
 
 ## Production notes
 
-- Route protection for `/submit` and `/admin` relies on the Firebase Admin SDK env vars being present.
+- Route protection for `/submit` and `/admin` verifies Firebase ID tokens against Firebase Auth on the server, so the Firebase web config must be present in the environment.
 - Public event cards and detail views update in real time using Firestore listeners.
 - RSVP counts are also live and update without refreshing the page.
 - Event search and area filtering happen in the client after real-time event sync.

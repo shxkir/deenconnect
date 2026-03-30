@@ -19,11 +19,22 @@ export function EventCard({
   return (
     <article className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-soft">
       <div className="relative h-56 overflow-hidden">
-        <img
-          src={event.imageUrl}
-          alt={event.title}
-          className="h-full w-full object-cover transition duration-500 hover:scale-105"
-        />
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="h-full w-full object-cover transition duration-500 hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_top,#efe3b8,transparent_48%),linear-gradient(135deg,#214738,#56715f)] p-6">
+            <div className="rounded-3xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-mist/80">
+                DeenConnect Event
+              </p>
+              <p className="mt-2 font-serif text-2xl text-white">{event.title}</p>
+            </div>
+          </div>
+        )}
         <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-forest">
           {event.area}
         </div>
@@ -68,4 +79,3 @@ export function EventCard({
     </article>
   );
 }
-

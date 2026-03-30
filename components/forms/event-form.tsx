@@ -13,7 +13,6 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { createEventRecord, updateEventRecord } from "@/lib/firebase/events";
-import { deleteEventImage, uploadEventImage } from "@/lib/firebase/storage";
 import type { EventFormValues, EventRecord } from "@/types";
 
 const eventFormSchema = z.object({
@@ -22,8 +21,10 @@ const eventFormSchema = z.object({
   location: z.string().min(4, "Location must be at least 4 characters."),
   area: z.string().min(2, "Area must be at least 2 characters."),
   dateTime: z.string().min(1, "Select a date and time."),
+  imageUrl: z
+    .union([z.literal(""), z.string().url("Enter a valid image URL.")])
+    .optional(),
   status: z.enum(["pending", "approved", "rejected"]).optional(),
-  image: z.any().optional(),
 });
 
 interface EventFormProps {
@@ -49,10 +50,9 @@ export function EventForm({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
-  } = useForm<EventFormValues>({
-    resolver: zodResolver(eventFormSchema as z.ZodType<EventFormValues>),
+  } = useForm({
+    resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: initialEvent?.title ?? "",
       description: initialEvent?.description ?? "",
@@ -61,11 +61,10 @@ export function EventForm({
       dateTime: initialEvent?.dateTime
         ? format(initialEvent.dateTime, "yyyy-MM-dd'T'HH:mm")
         : "",
+      imageUrl: initialEvent?.imageUrl ?? "",
       status: initialEvent?.status ?? "pending",
     },
   });
-
-  const selectedFile = watch("image")?.item?.(0);
 
   async function onSubmit(values: EventFormValues) {
     if (!user) {
@@ -78,23 +77,8 @@ export function EventForm({
     setIsSubmitting(true);
 
     try {
-      const nextFile = values.image?.item?.(0) ?? null;
-      let imageUrl = initialEvent?.imageUrl ?? "";
-      let imagePath = initialEvent?.imagePath ?? "";
-
-      if (mode === "create" && !nextFile) {
-        throw new Error("An event image is required.");
-      }
-
-      if (nextFile) {
-        const upload = await uploadEventImage(nextFile, user.uid);
-        imageUrl = upload.imageUrl;
-        imagePath = upload.imagePath;
-
-        if (mode === "edit" && initialEvent?.imagePath) {
-          await deleteEventImage(initialEvent.imagePath).catch(() => undefined);
-        }
-      }
+      const imageUrl = values.imageUrl?.trim() ?? "";
+      const imagePath = "";
 
       if (mode === "create") {
         await createEventRecord({
@@ -114,8 +98,8 @@ export function EventForm({
           location: "",
           area: "",
           dateTime: "",
+          imageUrl: "",
           status: "pending",
-          image: undefined,
         });
         setSubmitSuccess("Event submitted successfully and sent for admin review.");
       } else if (initialEvent) {
@@ -145,7 +129,10 @@ export function EventForm({
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+    <form
+      className="space-y-5"
+      onSubmit={handleSubmit((values) => onSubmit(values as EventFormValues))}
+    >
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
           <label className="text-sm font-medium text-cedar">Title</label>
@@ -192,12 +179,19 @@ export function EventForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-cedar">Event image</label>
-          <Input type="file" accept="image/*" {...register("image")} />
+          <label className="text-sm font-medium text-cedar">
+            Event image URL
+          </label>
+          <Input
+            placeholder="https://example.com/event-flyer.jpg"
+            {...register("imageUrl")}
+          />
           <p className="text-xs text-forest/60">
-            {selectedFile?.name ||
-              (initialEvent?.imageUrl ? "Existing image will be kept." : "Upload a banner or flyer image.")}
+            Add a public image URL if you have one. Leave blank to use the default event artwork.
           </p>
+          {errors.imageUrl ? (
+            <p className="text-sm text-red-600">{errors.imageUrl.message}</p>
+          ) : null}
         </div>
 
         {mode === "edit" ? (

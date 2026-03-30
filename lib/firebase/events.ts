@@ -16,7 +16,6 @@ import {
 
 import { EVENT_COLLECTION, RSVP_COLLECTION } from "@/lib/constants";
 import { getFirebaseClientDb } from "@/lib/firebase/client";
-import { deleteEventImage } from "@/lib/firebase/storage";
 import { fromFirestoreDate } from "@/lib/utils";
 import type { EventRecord, EventStatus } from "@/types";
 
@@ -182,9 +181,4 @@ export async function deleteEventRecord(event: EventRecord) {
 
   batch.delete(doc(db, EVENT_COLLECTION, event.id));
   await batch.commit();
-
-  if (event.imagePath) {
-    await deleteEventImage(event.imagePath).catch(() => undefined);
-  }
 }
-

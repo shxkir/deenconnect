@@ -42,12 +42,18 @@ export function RsvpButton({
     );
   }
 
+  const currentUser = user;
+
   async function handleClick() {
+    if (!currentUser) {
+      return;
+    }
+
     try {
       setIsWorking(true);
       await setRsvpStatus({
         eventId,
-        userId: user.uid,
+        userId: currentUser.uid,
         shouldRsvp: !isRsvped,
       });
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -12,45 +12,78 @@ import { Input } from "@/components/ui/input";
 import { signInWithEmail, signUpWithEmail } from "@/lib/firebase/auth";
 import type { AuthFormValues } from "@/types";
 
-const loginSchema = z.object({
+const authSchema = z.object({
+  name: z.string().optional(),
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
+  confirmPassword: z.string().optional(),
 });
 
-const signupSchema = loginSchema
-  .extend({
-    name: z.string().min(2, "Name must be at least 2 characters."),
-    confirmPassword: z.string().min(8, "Confirm your password."),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
-  });
-
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({
+  mode,
+  nextPath = "/",
+}: {
+  mode: "login" | "signup";
+  nextPath?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/";
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const schema = mode === "signup" ? signupSchema : loginSchema;
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<AuthFormValues>({
-    resolver: zodResolver(schema as z.ZodType<AuthFormValues>),
+    resolver: zodResolver(authSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   async function onSubmit(values: AuthFormValues) {
     setSubmitError(null);
+    clearErrors(["name", "confirmPassword"]);
+
+    if (mode === "signup") {
+      const trimmedName = values.name?.trim() ?? "";
+
+      if (trimmedName.length < 2) {
+        setError("name", {
+          type: "manual",
+          message: "Name must be at least 2 characters.",
+        });
+        return;
+      }
+
+      if (!values.confirmPassword || values.confirmPassword.length < 8) {
+        setError("confirmPassword", {
+          type: "manual",
+          message: "Confirm your password.",
+        });
+        return;
+      }
+
+      if (values.password !== values.confirmPassword) {
+        setError("confirmPassword", {
+          type: "manual",
+          message: "Passwords do not match.",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === "signup") {
         await signUpWithEmail({
-          name: values.name ?? "",
+          name: values.name?.trim() ?? "",
           email: values.email,
           password: values.password,
         });
@@ -88,7 +121,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         </p>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="space-y-5"
+        onSubmit={handleSubmit((values) => onSubmit(values as AuthFormValues))}
+      >
         {mode === "signup" ? (
           <div className="space-y-2">
             <label className="text-sm font-medium text-cedar">Full name</label>

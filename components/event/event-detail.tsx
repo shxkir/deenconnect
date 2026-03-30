@@ -54,11 +54,25 @@ export function EventDetail({ eventId }: { eventId: string }) {
     <article className="overflow-hidden rounded-[2.5rem] border border-white/70 bg-white/95 shadow-soft">
       <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="relative min-h-[24rem] overflow-hidden">
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="h-full w-full object-cover"
-          />
+          {event.imageUrl ? (
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full min-h-[24rem] w-full items-end bg-[radial-gradient(circle_at_top,#efe3b8,transparent_48%),linear-gradient(135deg,#214738,#56715f)] p-8">
+              <div className="max-w-md rounded-[2rem] border border-white/20 bg-white/10 p-6 backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-mist/80">
+                  DeenConnect Event
+                </p>
+                <p className="mt-3 font-serif text-4xl text-white">{event.title}</p>
+                <p className="mt-4 text-sm leading-6 text-white/80">
+                  Community gathering details and live RSVP updates are available below.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="space-y-6 p-8 lg:p-10">
           <div className="space-y-3">
@@ -112,4 +126,3 @@ export function EventDetail({ eventId }: { eventId: string }) {
     </article>
   );
 }
-
