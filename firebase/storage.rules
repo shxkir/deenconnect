@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == "admin@deenconnect.com";
+    }
+
+    match /events/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() &&
+        (request.auth.uid == userId || isAdmin()) &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+  }
+}
+

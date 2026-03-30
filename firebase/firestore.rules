@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == "admin@deenconnect.com";
+    }
+
+    function isEventStatus(value) {
+      return value in ["pending", "approved", "rejected"];
+    }
+
+    function validEventPayload(data, eventId) {
+      return data.keys().hasOnly([
+        "id",
+        "title",
+        "description",
+        "location",
+        "area",
+        "dateTime",
+        "imageUrl",
+        "imagePath",
+        "createdBy",
+        "status",
+        "createdAt"
+      ]) &&
+      data.id == eventId &&
+      data.title is string &&
+      data.title.size() >= 4 &&
+      data.description is string &&
+      data.description.size() >= 20 &&
+      data.location is string &&
+      data.location.size() >= 4 &&
+      data.area is string &&
+      data.area.size() >= 2 &&
+      data.imageUrl is string &&
+      data.imageUrl.size() > 0 &&
+      data.imagePath is string &&
+      data.imagePath.size() > 0 &&
+      data.createdBy is string &&
+      isEventStatus(data.status);
+    }
+
+    match /users/{userId} {
+      allow create: if isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.id == userId &&
+        request.resource.data.email == request.auth.token.email;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if false;
+    }
+
+    match /events/{eventId} {
+      allow read: if resource.data.status == "approved" ||
+        (isSignedIn() &&
+          (resource.data.createdBy == request.auth.uid || isAdmin()));
+
+      allow create: if isSignedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.status == "pending" &&
+        validEventPayload(request.resource.data, eventId);
+
+      allow update: if isAdmin() &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        validEventPayload(request.resource.data, eventId);
+
+      allow delete: if isAdmin();
+    }
+
+    match /rsvps/{rsvpId} {
+      allow read: if true;
+
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly([
+          "id",
+          "eventId",
+          "userId",
+          "createdAt"
+        ]) &&
+        request.resource.data.id == rsvpId &&
+        request.resource.data.userId == request.auth.uid &&
+        rsvpId == request.resource.data.eventId + "_" + request.auth.uid &&
+        get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.status == "approved";
+
+      allow delete: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow update: if false;
+    }
+  }
+}
+
